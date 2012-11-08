@@ -15,20 +15,17 @@ namespace BasicDatabaseCRUD
 {
     public partial class frmMain : Form
     {
+        private OleDbConnection con;
+
+        /// <summary>
+        /// Class constructor - opens global database connection
+        /// </summary>
         public frmMain()
         {
-            InitializeComponent();
-        }
-
-        private void frmMain_Load(object sender, EventArgs e)
-        {
-            lstMenuItems2.Items.Clear();
-            
-            OleDbConnection con = new OleDbConnection(@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=c:\users\gsantella\documents\visual studio 2010\Projects\BasicDatabaseCRUD\BasicDatabaseCRUD\MenuItems.accdb");
-          
             #region OpenDatabaseConnection
             try
             {
+                con = new OleDbConnection(@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=c:\users\gsantella\documents\visual studio 2010\Projects\BasicDatabaseCRUD\BasicDatabaseCRUD\MenuItems.accdb");
                 con.Open();
             }
             catch (Exception ex)
@@ -36,17 +33,14 @@ namespace BasicDatabaseCRUD
                 MessageBox.Show("Problem with opening database.");
             }
             #endregion
-
-            OleDbCommand command = new OleDbCommand("SELECT id, itemName FROM menuItem;", con);
-            OleDbDataReader reader = command.ExecuteReader();
-
-            while (reader.Read())
-            {
-                lstMenuItems2.Items.Add(reader.GetString(1).ToString()).SubItems.Add(reader.GetInt32(0).ToString());
-            }
-
-            reader.Close();
-
+            InitializeComponent();
+        }
+        
+        /// <summary>
+        /// Class destructor - closes global database connection
+        /// </summary>
+        ~frmMain()
+        {
             #region CloseDatabaseConnection
             try
             {
@@ -57,30 +51,41 @@ namespace BasicDatabaseCRUD
                 MessageBox.Show("Problem with closing database.");
             }
             #endregion
+        }
 
+        /// <summary>
+        /// Reads all items global database connection into the ListView control
+        /// </summary>
+        private void ReadDatabaseItemsToListView()
+        {
+            OleDbCommand command = new OleDbCommand("SELECT id, itemName FROM menuItem;", con);
+            OleDbDataReader reader = command.ExecuteReader();
+
+            lstMenuItems2.Items.Clear();
+
+            while (reader.Read())
+            {
+                lstMenuItems2.Items.Add(reader.GetString(1).ToString()).SubItems.Add(reader.GetInt32(0).ToString());
+            }
+
+            reader.Close();
+        }
+
+        /// <summary>
+        /// Load event handler for frmMain
+        /// </summary>
+        private void frmMain_Load(object sender, EventArgs e)
+        {
+            ReadDatabaseItemsToListView();
         }
 
         private void btnAddItem_Click(object sender, EventArgs e)
         {
-            OleDbConnection con = new OleDbConnection(@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=c:\users\gsantella\documents\visual studio 2010\Projects\BasicDatabaseCRUD\BasicDatabaseCRUD\MenuItems.accdb");
-
-            #region OpenDatabaseConnection
-            try
-            {
-                con.Open();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Problem with opening database.");
-            }
-            #endregion
-
             frmAddItem addItemForm = new frmAddItem();
             addItemForm.ShowDialog();
 
             if (addItemForm.Value != "!!CancelAdd!!")
             {
-
                 OleDbCommand command = new OleDbCommand("INSERT INTO menuItem(itemName) VALUES('" + addItemForm.Value + "');", con);
                 int numRowsAffected = command.ExecuteNonQuery();
 
@@ -93,18 +98,7 @@ namespace BasicDatabaseCRUD
                     MessageBox.Show("Error with Insert");
                 }
 
-                #region CloseDatabaseConnection
-                try
-                {
-                    con.Close();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Problem with closing database.");
-                }
-                #endregion
-
-                frmMain_Load(null, null);
+                ReadDatabaseItemsToListView();
             }
         }
 
@@ -118,19 +112,6 @@ namespace BasicDatabaseCRUD
 
                 if (updateItemForm.Value != "!!CancelUpdate!!")
                 {
-                    OleDbConnection con = new OleDbConnection(@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=c:\users\gsantella\documents\visual studio 2010\Projects\BasicDatabaseCRUD\BasicDatabaseCRUD\MenuItems.accdb");
-
-                    #region OpenDatabaseConnection
-                    try
-                    {
-                        con.Open();
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("Problem with opening database.");
-                    }
-                    #endregion
-
                     OleDbCommand command = new OleDbCommand("UPDATE menuItem SET itemName = '" + updateItemForm.Value + "' WHERE id = " + lstMenuItems2.SelectedItems[0].SubItems[1].Text + ";", con);
                     int numRowsAffected = command.ExecuteNonQuery();
 
@@ -143,18 +124,7 @@ namespace BasicDatabaseCRUD
                         MessageBox.Show("Error with Update");
                     }
 
-                    #region CloseDatabaseConnection
-                    try
-                    {
-                        con.Close();
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("Problem with closing database.");
-                    }
-                    #endregion
-
-                    frmMain_Load(null, null);
+                    ReadDatabaseItemsToListView();
                 }
             }
             else
@@ -167,19 +137,6 @@ namespace BasicDatabaseCRUD
         {
             if (lstMenuItems2.SelectedItems.Count > 0)
             {
-                OleDbConnection con = new OleDbConnection(@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=c:\users\gsantella\documents\visual studio 2010\Projects\BasicDatabaseCRUD\BasicDatabaseCRUD\MenuItems.accdb");
-
-                #region OpenDatabaseConnection
-                try
-                {
-                    con.Open();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Problem with opening database.");
-                }
-                #endregion
-
                 OleDbCommand command = new OleDbCommand("DELETE FROM menuItem WHERE id = " + lstMenuItems2.SelectedItems[0].SubItems[1].Text + ";", con);
                 int numRowsAffected = command.ExecuteNonQuery();
 
@@ -192,18 +149,7 @@ namespace BasicDatabaseCRUD
                     MessageBox.Show("Error with Deletion");
                 }
 
-                #region CloseDatabaseConnection
-                try
-                {
-                    con.Close();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Problem with closing database.");
-                }
-                #endregion
-
-                frmMain_Load(null, null);
+                ReadDatabaseItemsToListView();
             }
             else
             {
@@ -211,9 +157,12 @@ namespace BasicDatabaseCRUD
             }
         }
 
+        /// <summary>
+        /// Refreshes all items in the ListView from the database
+        /// </summary>
         private void btnRefreshItems_Click(object sender, EventArgs e)
         {
-            frmMain_Load(null, null);
+            ReadDatabaseItemsToListView();
         }
     }
 }
